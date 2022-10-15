@@ -7,7 +7,7 @@ SOURCEDIR=src
 HEADFILES=$(wildcard $(SOURCEDIR)/*.hpp)
 SOURCES=$(wildcard $(SOURCEDIR)/*.cpp)
 
-main: $(SOURCEDIR)/main.o
+main: clean $(SOURCEDIR)/main.o
 	$(CC) $(FLAGS) -o $(BUILD)program $(SOURCEDIR)/main.o 
 
 main.o: $(SOURCEDIR)/Deque.hpp

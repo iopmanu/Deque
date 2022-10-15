@@ -29,7 +29,7 @@ private:
     typedef value_type* pointer;
 
     typedef value_type& reference;
-    typedef const reference const_reference;
+    typedef const T& const_reference;
 
     const std::size_t initial_size = 32;
     std::size_t pivot = 0;
@@ -68,7 +68,7 @@ private:
             delete this->external_storage[i];                                      // Удаляем те, в которых не было значений.
         }
         for (std::size_t i = this->last_storage + 1; i < this->external_storage.size(); i++) {
-            delete this->extenral_storage[i];
+            delete this->external_storage[i];
         }
 
         this->first_storage = pivot + upper_offset;
@@ -130,7 +130,9 @@ public:
         }
 
         offset += index / this->initial_size;
-        index %= index % this->initial_size;
+        index %= this->initial_size;
+        
+        std::cout << this->first_storage+offset << " " << index << std::endl;
 
         return this->external_storage[this->first_storage + offset][index];
     }
