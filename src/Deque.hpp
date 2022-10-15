@@ -4,19 +4,19 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-                                                                                           /*
-                                                                     |                      *                        *[] -> nullptr
-                                                                     |                      *                        *[] -> nullptr
-             Data structure                                          |                      * first_storage          *[] -> [uninit_zone ... value[current_first] ... values]
-             organization                                            |                      *                        *[] -> [       ...      values          ...            ]
-                                                                     |                      *                        *[] -> [       ...      values          ...            ]
-The reasion to use vector as external storage instead of list is     |                      * last_storage           *[] -> [values ... value[current_last] ... uninit_zone]
-a random acces iterator category. Using list will give asymptotic    |                      *                        *[] -> nullptr
-of basic operations better, but using vector gives us the same       |                      *
-amortization time that we can have with using list.                  |                      *   external_storage_size = 4
-                                                                     |                      *   external_capacity = external_storage.size() * initial_size
-                                                                     |                      *                        
-                                                                                            */
+                                                                       /*
+                                                                     |  *                        *[] -> nullptr
+                                                                     |  *                        *[] -> nullptr
+             Data structure                                          |  * first_storage          *[] -> [uninit_zone ... value[current_first] ... values]
+             organization                                            |  *                        *[] -> [       ...      values          ...            ]
+                                                                     |  *                        *[] -> [       ...      values          ...            ]
+The reasion to use vector as external storage instead of list is     |  * last_storage           *[] -> [values ... value[current_last] ... uninit_zone]
+a random acces iterator category. Using list will give asymptotic    |  *                        *[] -> nullptr
+of basic operations better, but using vector gives us the same       |  *
+amortization time that we can have with using list.                  |  *   external_storage_size = 4
+                                                                     |  *   external_capacity = external_storage.size() * initial_size
+                                                                     |  *                        
+                                                                        */
 template<typename T>
 class Own_deque {  
 private:
