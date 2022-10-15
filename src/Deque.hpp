@@ -16,7 +16,7 @@
 The reasion to use vector as external storage instead of list is     |  * last_storage           *[] -> [values ... value[current_last] ... uninit_zone]
 a random acces iterator category. Using list will give asymptotic    |  *                        *[] -> nullptr
 of basic operations better, but using vector gives us the same       |  *
-amortization time that we can have with using list.                  |  *   external_storage_size = 4
+amortization time that we can have with using list.                  |  *   external_storage_size = 4 * initial_size
                                                                      |  *   external_capacity = external_storage.size() * initial_size
                                                                      |  *
                                                                         */
@@ -24,8 +24,12 @@ template <typename T>
 class Deque {
 private:
     typedef T value_type;
+    typedef const value_type const_value_type;
+
     typedef value_type* pointer;
+
     typedef value_type& reference;
+    typedef const reference const_reference;
 
     const std::size_t initial_size = 32;
     std::size_t pivot = 0;
@@ -82,6 +86,7 @@ private:
 
 public:
     /*==============================================================CONSTRUCTORS_AND_DESTRUCTORS==============================================================*/
+    
     explicit Deque() noexcept {
         this->external_storage.resize(EXTERNAL_INIT_SIZE);
         this->external_capacity = this->initial_size * 2;
@@ -147,6 +152,80 @@ public:
         assert(!this->empty());
         return this->external_storage[this->last_storage][this->current_last];
     }
+
+    /*=========================================================================METHODS========================================================================*/
+    
+    /*Inserts an element to the beginning*/
+    void push_front(const_reference source) {
+        int current_first_int = this->current_first;
+
+        this->external_storage[this->first_storage][this->current_first] = source;
+        this->external_storage_size++;
+        current_first_int--;
+
+        if (current_first_int < 0) {
+            this->current_first = this->initial_size - 1;
+            int first_storage_int = this->first_storage;
+
+            if ((first_storage_int - 1) < 0) {
+                this->resize();
+            }
+
+            this->first_storage--;
+        }
+    }
+    
+    /*Adds an element to the end*/
+    void push_back(const_reference source) {
+        int current_last_int = this->current_last;
+
+        this->external_storage[this->last_storage][this->current_last] = source;
+        this->external_storage_size++;
+        current_last_int++;
+
+        if (current_last_int >= this->initial_size) {
+            this->current_last = 0;
+            int last_storage_int = this->last_storage;
+
+            if (last_storage_int + 1 >= static_cast<int>(this->external_storage.size())) {
+                this->resize();
+            }
+
+            this->last_storage++;
+        }
+    }
+
+    void pop_back() {
+        if (!this->empty()) {
+            int current_last_int = this->current_last;
+            current_last_int--;
+
+            if (current_last_int < 0) {
+                this->current_last = this->initial_size - 1;
+                this->last_storage--;
+            }
+
+            this->external_storage_size()--;
+        }
+    }
+                                                                    // По факту элемент в этих методах мы никак не удаляем,
+                                                                    // да по сути эффективно удалить и не можем, поэтому наша
+                                                                    // задача - просто правильно поддерживать индекс.
+    void pop_front() {
+        if (!this->empty()) {
+            int current_first_int = this->current_first;
+            current_first_int++;
+
+            if (current_first_int >= this->initial_size) {
+                this->current_first = 0;
+                this->first_storage++;
+            }
+
+            this->external_storage_size()--;
+        }
+    }
+
+
 };
 
-#endif
+#endif // SRC_DEQUE_HPP_
