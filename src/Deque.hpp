@@ -1,9 +1,12 @@
 #ifndef SRC_DEQUE_HPP_
 #define SRC_DEQUE_HPP_
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 #include <vector>
+#include <cassert>
+
+#define EXTERNAL_INIT_SIZE 2
                                                                        /*
                                                                      |  *                        *[] -> nullptr
                                                                      |  *                        *[] -> nullptr
@@ -15,10 +18,10 @@ a random acces iterator category. Using list will give asymptotic    |  *       
 of basic operations better, but using vector gives us the same       |  *
 amortization time that we can have with using list.                  |  *   external_storage_size = 4
                                                                      |  *   external_capacity = external_storage.size() * initial_size
-                                                                     |  *                        
+                                                                     |  *
                                                                         */
-template<typename T>
-class Own_deque {  
+template <typename T>
+class Deque {
 private:
     typedef T value_type;
     typedef value_type* pointer;
@@ -33,14 +36,13 @@ private:
     std::size_t external_storage_size = 0;
     std::size_t external_capacity = initial_size;
     std::vector<pointer> external_storage;
-    
-    
+
     /* Вообще оператор new может не вызывать конструктор по умолчанию и выдать просто кусок сырой памяти, что вызовет ub */
     pointer make_storage() noexcept {
         pointer new_storage = reinterpret_cast<T*>(new char[this->initial_size * sizeof(value_type)]);
         return new_storage;
     }
-    
+
     /* Дисклеймер (ЗДЕСЬ МОГ БЫТЬ ВАШ ЛИСТ), однако определенным образом подбирая initial_size - константа степени 2(символично),
      * мы можем практически избежать вызова метода resize, поддерживать операции за все те же O(1). Метод крайне простоват:
      * создаем новый внешний сторедж(вектор) размер X2, затем присваиваем внутренним стореджам внутренние стореджи старого вектора.
@@ -49,17 +51,17 @@ private:
         std::size_t new_size = this->external_storage.size() * 2;
         std::vector<pointer> new_external_storage(new_size);
         std::size_t new_pivot = new_size / 2 - 1;
-        int upper_offset = static_cast<int>(this->first_storage - new_pivot); // Данные величины вполне могут оказаться.
-        int lower_offset = static_cast<int>(this->last_storage - new_pivot);  // отрицательными, особенно в случае верхнего смещения.
+        int upper_offset = static_cast<int>(this->first_storage - new_pivot);      // Данные величины вполне могут оказаться.
+        int lower_offset = static_cast<int>(this->last_storage - new_pivot);       // отрицательными, особенно в случае верхнего смещения.
         this->pivot = new_pivot;
         std::size_t upper_storage = new_pivot + upper_offset;
 
-        for (std::size_t i = this->first_storage; i <= this->last_storage; i++) { // Связываем новые и старые стореджи.
+        for (std::size_t i = this->first_storage; i <= this->last_storage; i++) {  // Связываем новые и старые стореджи.
             new_external_storage[i] = this->external_storage[i];
         }
 
         for (std::size_t i = 0; i < this->first_storage; i++) {
-            delete this->external_storage[i];                                                           // Удаляем те, в которых не было значений.
+            delete this->external_storage[i];                                      // Удаляем те, в которых не было значений.
         }
         for (std::size_t i = this->last_storage + 1; i < this->external_storage.size(); i++) {
             delete this->extenral_storage[i];
@@ -68,14 +70,82 @@ private:
         this->first_storage = pivot + upper_offset;
         this->last_storage = pivot + lower_offset;
 
-        for (auto &storage : new_external_storage) {          // Выделяем кусок памяти и инициализурем сырую память значениями
-            if (storage == nullptr) {                         // конструктора по умолчанию. Собствеенно говоря по этой причине
-                storage = this->make_storage();               // мы и удаляли эти 'незаполненные' стореджи(выше).
+        for (auto& storage : new_external_storage) {                               // Выделяем кусок памяти и инициализурем сырую память значениями
+            if (storage == nullptr) {                                              // конструктора по умолчанию. Собствеенно говоря по этой причине
+                storage = this->make_storage();                                    // мы и удаляли эти 'незаполненные' стореджи(выше).
             }
         }
 
         this->external_storage = new_external_storage;
         this->external_capacity = this->external_storage.size() * this->initial_size;
+    }
+
+public:
+    /*==============================================================CONSTRUCTORS_AND_DESTRUCTORS==============================================================*/
+    explicit Deque() noexcept {
+        this->external_storage.resize(EXTERNAL_INIT_SIZE);
+        this->external_capacity = this->initial_size * 2;
+        this->external_storage[0] = make_storage();
+        this->external_storage[1] = make_storage();
+    }
+
+    explicit Deque(pointer source, std::size_t size) {
+        for (std::size_t i = 0; i < size; i++) {
+            this->push_back(source[i]);
+        }
+    }
+
+    ~Deque() {
+        for (auto& storage : this->external_storage) {
+            delete storage;
+        }
+    }
+
+    /*=========================================================================LOOKUP=========================================================================*/
+    
+    /*Returns the number of elements*/
+    inline std::size_t get_size() const noexcept { return this->external_storage_size; }
+    
+    /*Returns the number of elements*/
+    inline std::size_t get_capacity() const noexcept { return this->external_storage_capacity; }
+    
+    /*Checks whether the container is empty*/
+    inline bool empty() const noexcept { return this->external_storage_size == 0; }
+    
+    /*Acces specified element without bounds checking*/
+    reference operator[](std::size_t index) {
+        index++;
+        std::size_t offset = 0;
+
+        if (this->current_first >= this->initial_size) {
+            offset++;
+            index -= (this->initial_size - this->current_first);
+        } else {
+            index += this->current_first;
+        }
+
+        offset += index / this->initial_size;
+        index %= index % this->initial_size;
+
+        return this->external_storage[this->first_storage + offset][index];
+    }
+    
+    /*Access specified element with bounds checking*/
+    reference at(std::size_t index) {
+        assert(index <= this->external_storage_size);
+        return (*this)[index];
+    }
+    
+    /*Access the first element*/
+    inline reference front() const {
+        assert(!this->empty());
+        return this->external_storage[this->first_storage][this->current_first];
+    }
+    
+    /*Acces the last element*/
+    inline reference back() const {
+        assert(!this->empty());
+        return this->external_storage[this->last_storage][this->current_last];
     }
 };
 
