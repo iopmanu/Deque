@@ -31,10 +31,10 @@ private:
     typedef value_type& reference;
     typedef const T& const_reference;
 
-    const std::size_t initial_size = 32;
+    const std::size_t initial_size = 4;
     std::size_t pivot = 0;
-    std::size_t current_first = (initial_size - 1) / 2;
-    std::size_t current_last = (initial_size - 1) / 2 - 1;
+    std::size_t current_first = (initial_size - 1) / 2 - 1;
+    std::size_t current_last = (initial_size - 1) / 2;
     std::size_t first_storage = 0;
     std::size_t last_storage = 0;
     std::size_t external_storage_size = 0;
@@ -55,13 +55,13 @@ private:
         std::size_t new_size = this->external_storage.size() * 2;
         std::vector<pointer> new_external_storage(new_size);
         std::size_t new_pivot = new_size / 2 - 1;
-        int upper_offset = static_cast<int>(this->first_storage - new_pivot);      // Данные величины вполне могут оказаться.
-        int lower_offset = static_cast<int>(this->last_storage - new_pivot);       // отрицательными, особенно в случае верхнего смещения.
+        int upper_offset = static_cast<int>(this->first_storage - this->pivot);      // Данные величины вполне могут оказаться.
+        int lower_offset = static_cast<int>(this->last_storage - this->pivot);       // отрицательными, особенно в случае верхнего смещения.
         this->pivot = new_pivot;
-        std::size_t upper_storage = new_pivot + upper_offset;
+        std::size_t storage = new_pivot + upper_offset;
 
-        for (std::size_t i = this->first_storage; i <= this->last_storage; i++) {  // Связываем новые и старые стореджи.
-            new_external_storage[i] = this->external_storage[i];
+        for (std::size_t i = this->first_storage; i <= this->last_storage; i++, storage++) {  // Связываем новые и старые стореджи.
+            new_external_storage[storage] = this->external_storage[i];
         }
 
         for (std::size_t i = 0; i < this->first_storage; i++) {
@@ -71,9 +71,9 @@ private:
             delete this->external_storage[i];
         }
 
-        this->first_storage = pivot + upper_offset;
-        this->last_storage = pivot + lower_offset;
-
+        this->first_storage = new_pivot + upper_offset;
+        this->last_storage = new_pivot + lower_offset;
+        
         for (auto& storage : new_external_storage) {                               // Выделяем кусок памяти и инициализурем сырую память значениями
             if (storage == nullptr) {                                              // конструктора по умолчанию. Собствеенно говоря по этой причине
                 storage = this->make_storage();                                    // мы и удаляли эти 'незаполненные' стореджи(выше).
@@ -131,8 +131,6 @@ public:
 
         offset += index / this->initial_size;
         index %= this->initial_size;
-        
-        std::cout << this->first_storage+offset << " " << index << std::endl;
 
         return this->external_storage[this->first_storage + offset][index];
     }
@@ -144,15 +142,15 @@ public:
     }
     
     /*Access the first element*/
-    inline reference front() const {
+    reference front() const {
         assert(!this->empty());
-        return this->external_storage[this->first_storage][this->current_first];
+        return this->operator[](0);
     }
     
     /*Acces the last element*/
-    inline reference back() const {
+    reference back() const {
         assert(!this->empty());
-        return this->external_storage[this->last_storage][this->current_last];
+        return (*this)[this->current_last];
     }
 
     /*=========================================================================METHODS========================================================================*/
@@ -174,6 +172,8 @@ public:
             }
 
             this->first_storage--;
+        } else {
+            this->current_first = static_cast<std::size_t>(current_first_int);
         }
     }
     
@@ -194,6 +194,8 @@ public:
             }
 
             this->last_storage++;
+        } else {
+            this->current_last = static_cast<std::size_t>(current_last_int);
         }
     }
 
@@ -205,9 +207,11 @@ public:
             if (current_last_int < 0) {
                 this->current_last = this->initial_size - 1;
                 this->last_storage--;
+            } else {
+                this->current_last = static_cast<std::size_t>(current_last_int);
             }
 
-            this->external_storage_size()--;
+            this->external_storage_size--;
         }
     }
                                                                     // По факту элемент в этих методах мы никак не удаляем,
@@ -221,12 +225,23 @@ public:
             if (current_first_int >= this->initial_size) {
                 this->current_first = 0;
                 this->first_storage++;
+            } else {
+                this->current_first = static_cast<std::size_t>(current_first_int);
             }
 
-            this->external_storage_size()--;
+            this->external_storage_size--;
         }
     }
-
+    
+    void print_deque() {
+        for (auto& storage : this->external_storage) {
+            for (std::size_t i = 0; i < this->initial_size; i++) {
+                std::cout << storage[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "\n\n\n\n";
+    }
 
 };
 
