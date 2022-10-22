@@ -16,7 +16,7 @@
 The reasion to use vector as external storage instead of list is     |  * last_storage           *[] -> [values ... value[current_last] ... uninit_zone]
 a random acces iterator category. Using list will give asymptotic    |  *                        *[] -> nullptr
 of basic operations better, but using vector gives us the same       |  *
-amortization time that we can have with using list.                  |  *   external_storage_size = 4 * initial_size
+amortization time that we can have with using list.                  |  *   external_storage_size = 4 * initial_size - uninit_zone
                                                                      |  *   external_capacity = external_storage.size() * initial_size
                                                                      |  *
                                                                         */
@@ -40,6 +40,13 @@ private:
     std::size_t external_storage_size = 0;
     std::size_t external_capacity = initial_size;
     std::vector<pointer> external_storage;
+    
+    /*This implementation use a sequence of individually allocated fixed-size arrays, with additional bookkeeping, which means indexed access to deque 
+     * must perform two pointer dereferences, compared to vector's indexed access which performs only one. Expansion of a deque is cheaper than the
+     * expansion of a std::vector because it does not involve copying of the existing elements to a new memory location. 
+
+   /*===================================================================*IMPLEMENTATION*=======================================================================*/
+
 
     /* Вообще оператор new может не вызывать конструктор по умолчанию и выдать просто кусок сырой памяти, что вызовет ub */
     pointer make_storage() noexcept {
@@ -85,7 +92,7 @@ private:
     }
 
 public:
-    /*==============================================================CONSTRUCTORS_AND_DESTRUCTORS==============================================================*/
+    /*=============================================================^CONSTRUCTORS_AND_DESTRUCTORS^=============================================================*/
     
     explicit Deque() noexcept {
         this->external_storage.resize(EXTERNAL_INIT_SIZE);
@@ -106,7 +113,7 @@ public:
         }
     }
 
-    /*=========================================================================LOOKUP=========================================================================*/
+    /*========================================================================^LOOKUP^========================================================================*/
     
     /*Returns the number of elements*/
     inline std::size_t get_size() const noexcept { return this->external_storage_size; }
@@ -153,7 +160,7 @@ public:
         return this->operator[](this->external_storage_size - 1);
     }
 
-    /*=========================================================================METHODS========================================================================*/
+    /*========================================================================^METHODS^=======================================================================*/
     
     /*Inserts an element to the beginning*/
     void push_front(const_reference source) {
