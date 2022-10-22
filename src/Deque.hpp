@@ -142,15 +142,15 @@ public:
     }
     
     /*Access the first element*/
-    reference front() const {
+    reference front() {
         assert(!this->empty());
         return this->operator[](0);
     }
     
     /*Acces the last element*/
-    reference back() const {
+    reference back() {
         assert(!this->empty());
-        return (*this)[this->current_last];
+        return this->operator[](this->external_storage_size - 1);
     }
 
     /*=========================================================================METHODS========================================================================*/

@@ -19,7 +19,6 @@ int main() {
     deque->push_back(100);
     deque->push_front(50);
     deque->push_front(60);
-    deque->print_deque();
 
     std::cout << deque->front() << " " << deque->back() << std::endl;
     std::cout << deque->at(3) << " " << deque->operator[](2);
