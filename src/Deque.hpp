@@ -31,7 +31,7 @@ private:
     typedef value_type& reference;
     typedef const T& const_reference;
 
-    const std::size_t initial_size = 4;
+    const std::size_t initial_size = 64;
     std::size_t pivot = 0;
     std::size_t current_first = (initial_size - 1) / 2 - 1;
     std::size_t current_last = (initial_size - 1) / 2;
