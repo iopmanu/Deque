@@ -250,6 +250,108 @@ public:
         std::cout << "\n\n\n\n";
     }
 
+
+    /*======================================================================^ITERATOR^=======================================================================*/
+
+    class Deque_iterator {
+        friend Deque;
+
+    private:
+        int offset = 0;
+        int index = 0;
+        std::vector<T*> storage;
+        int pivot = 0;
+
+        Deque_iterator(int current_position, int current_storage, std::vector<T*> _storage, int _pivot) noexcept
+            : storage(_storage), pivot(_pivot) {
+            if (current_position >= initial_size) {
+                current_position -= initial_size;
+                offset++;
+            } else if (current_position < 0) {
+                current_position += initial_size;
+                offset--;
+            }
+        }
+
+    public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using pointer = T*;
+        using reference = T&;
+        
+        T& get_value() {
+            return this->storage[0][17];
+        }
+
+        Deque_iterator& operator+=(int linear_offset) {
+            this->index += linear_offset;
+
+            if (this->index >= initial_size) {
+                this->offset += index / initial_size;
+                this->index += index % initial_size;
+            }
+
+            return *this;
+        }
+
+        Deque_iterator& operator-=(int linear_offset) {
+            this->index -= linear_offset;
+
+            if (this->index < 0) {
+                this->offset -= abs(index) / initial_size + 1;
+                this->index += (abs(index) / initial_size + 1) * initial_size;
+            }
+
+            return *this;
+        }
+
+        Deque_iterator& operator++() {
+            this->operator+=(1);
+            return *this;
+        }
+
+        Deque_iterator& operator--() {
+            this->operator--(1);
+            return *this;
+        }
+
+        Deque_iterator& operator=(const Deque_iterator& other) {
+            this->offset = other.offset;
+            this->index = other.index;
+            return *this;
+        }
+
+        friend bool operator!=(const Deque_iterator& first, const Deque_iterator& other) {
+            return ((first.offset != other.offset) && (first.index != other.index)) ? 1 : 0;
+        }
+
+        friend Deque_iterator operator+(const Deque_iterator& other, int linear_offset) {
+            Deque_iterator result = other;
+            result += linear_offset;
+
+            return result;
+        }
+
+        friend Deque_iterator operator-(const Deque_iterator& other, int linear_offset) {
+            Deque_iterator result = other;
+            result -= linear_offset;
+
+            return result;
+        }
+    };
+
+    using iterator = Deque_iterator;
+
+    Deque_iterator begin() {
+        int int_current_first = static_cast<int>(this->current_first + 1);
+        int int_first_storage = static_cast<int>(this->first_storage);
+        int int_pivot = static_cast<int>(this->pivot);
+        
+        Deque_iterator it = Deque_iterator(int_current_first , int_first_storage, external_storage, int_pivot);
+        return it;
+    }
+
+    Deque_iterator end() { return Deque_iterator(this->current_last, this->last_storage, external_storage, pivot); }
 };
 
 #endif // SRC_DEQUE_HPP_
