@@ -345,7 +345,7 @@ public:
             T copy = it.operator*();
             it.operator*() = source;
 
-            for (auto deque_iterator = it; deque_iterator != this->end(); deque_iterator.operator++()) {
+            for (auto deque_iterator = it.operator++(); deque_iterator != this->end(); deque_iterator.operator++()) {
                 T buffer = deque_iterator.operator*();
                 deque_iterator.operator*() = copy;
                 copy = buffer;
