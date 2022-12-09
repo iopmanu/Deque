@@ -16,7 +16,7 @@ int main() {
     
     testing_with_stl_push_back();
     testing_with_stl_push_front();
-    /*auto deque = new Deque<int>();
+    auto deque = new Deque<int>();
     deque->push_front(1);
     deque->push_front(3);
     deque->push_back(6);
@@ -32,9 +32,17 @@ int main() {
     deque->push_front(50);
     deque->push_front(60);
 
-    std::cout << deque->front() << " " << deque->back() << std::endl;
-    std::cout << deque->at(3) << " " << deque->operator[](2);
-    deque->pop_back();
+    //std::cout << deque->front() << " " << deque->back() << std::endl;
+    //std::cout << deque->at(3) << " " << deque->operator[](2);
+    //deque->pop_back();
+    auto it = deque->begin().operator+=(5);
+
+    std::cout << *it << std::endl;
+    deque->insert(it, 1234);
+    deque->erase(it);
+
+    std::cout << deque;
+    /*
     //std::cout << std::endl << deque->back();
     deque->pop_front();
     //std::cout << std::endl << deque->front();

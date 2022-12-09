@@ -31,7 +31,7 @@ private:
     typedef value_type& reference;
     typedef const T& const_reference;
 
-    const std::size_t initial_size = 64;
+    const static std::size_t initial_size = 64;
     std::size_t pivot = 0;
     std::size_t current_first = (initial_size - 1) / 2 - 1;
     std::size_t current_last = (initial_size - 1) / 2;
@@ -72,10 +72,10 @@ private:
         }
 
         for (std::size_t i = 0; i < this->first_storage; i++) {
-            delete this->external_storage[i];                                      // Удаляем те, в которых не было значений.
+            delete [] this->external_storage[i];                                      // Удаляем те, в которых не было значений.
         }
         for (std::size_t i = this->last_storage + 1; i < this->external_storage.size(); i++) {
-            delete this->external_storage[i];
+            delete [] this->external_storage[i];
         }
 
         this->first_storage = new_pivot + upper_offset;
@@ -250,108 +250,118 @@ public:
         std::cout << "\n\n\n\n";
     }
 
-
     /*======================================================================^ITERATOR^=======================================================================*/
-
-    class Deque_iterator {
-        friend Deque;
+    
+    class Iterator {
+        friend class Deque;
 
     private:
-        int offset = 0;
-        int index = 0;
-        std::vector<T*> storage;
-        int pivot = 0;
-
-        Deque_iterator(int current_position, int current_storage, std::vector<T*> _storage, int _pivot) noexcept
-            : storage(_storage), pivot(_pivot) {
-            if (current_position >= initial_size) {
-                current_position -= initial_size;
-                offset++;
-            } else if (current_position < 0) {
-                current_position += initial_size;
-                offset--;
-            }
-        }
+        std::size_t current_position;
+        Deque<T> *deque;
 
     public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = T;
         using pointer = T*;
         using reference = T&;
+
+        Iterator() : deque(nullptr), current_position(0) {}
+        Iterator(Deque<T> *_deque, std::size_t position) : deque(_deque), current_position(position) {}
+
+        Iterator &operator=(const Iterator &other) {
+            this->current_position = other.current_position;
+            this->deque = other.deque;
+            return *this;
+        }
+
+        Iterator &operator+=(const std::size_t &offset) {
+            *this = (*this).operator+(offset);
+            return *this;
+        }
+
+        Iterator &operator-=(const std::size_t &offset) {
+            *this = (*this).operator-(offset);
+            return *this;
+        }
+
+        Iterator operator+(const std::size_t &offset) {
+            return Iterator(this->deque, this->current_position + offset);
+        }
+
+        Iterator operator-(const std::size_t &offset) {
+            return Iterator(this->deque, this->current_position - offset);
+        }
+
+        T& operator*() const {
+            return (*deque)[current_position];
+        }
         
-        T& get_value() {
-            return this->storage[0][17];
+        Iterator &operator++() {
+            return (*this).operator+=(1);
         }
 
-        Deque_iterator& operator+=(int linear_offset) {
-            this->index += linear_offset;
-
-            if (this->index >= initial_size) {
-                this->offset += index / initial_size;
-                this->index += index % initial_size;
-            }
-
-            return *this;
+        Iterator &operator--() {
+            return (*this).operator-=(1);
         }
 
-        Deque_iterator& operator-=(int linear_offset) {
-            this->index -= linear_offset;
-
-            if (this->index < 0) {
-                this->offset -= abs(index) / initial_size + 1;
-                this->index += (abs(index) / initial_size + 1) * initial_size;
-            }
-
-            return *this;
+        bool operator==(const Iterator &other) {
+            return (this->deque == other.deque) && (this->current_position == other.current_position);
         }
 
-        Deque_iterator& operator++() {
-            this->operator+=(1);
-            return *this;
-        }
-
-        Deque_iterator& operator--() {
-            this->operator--(1);
-            return *this;
-        }
-
-        Deque_iterator& operator=(const Deque_iterator& other) {
-            this->offset = other.offset;
-            this->index = other.index;
-            return *this;
-        }
-
-        friend bool operator!=(const Deque_iterator& first, const Deque_iterator& other) {
-            return ((first.offset != other.offset) && (first.index != other.index)) ? 1 : 0;
-        }
-
-        friend Deque_iterator operator+(const Deque_iterator& other, int linear_offset) {
-            Deque_iterator result = other;
-            result += linear_offset;
-
-            return result;
-        }
-
-        friend Deque_iterator operator-(const Deque_iterator& other, int linear_offset) {
-            Deque_iterator result = other;
-            result -= linear_offset;
-
-            return result;
+        bool operator!=(const Iterator &other) {
+            return (this->deque != other.deque) || (this->current_position != other.current_position);
         }
     };
 
-    using iterator = Deque_iterator;
+    using iterator = Iterator;
 
-    Deque_iterator begin() {
-        int int_current_first = static_cast<int>(this->current_first + 1);
-        int int_first_storage = static_cast<int>(this->first_storage);
-        int int_pivot = static_cast<int>(this->pivot);
-        
-        Deque_iterator it = Deque_iterator(int_current_first , int_first_storage, external_storage, int_pivot);
-        return it;
+    Iterator begin() {
+        return Iterator(this, 0);
     }
 
-    Deque_iterator end() { return Deque_iterator(this->current_last, this->last_storage, external_storage, pivot); }
+    Iterator end() {
+        return Iterator(this, this->get_size());
+    }
+
+    /*======================================================================^STREAM^=======================================================================*/
+
+    friend std::ostream &operator<<(std::ostream& out, Deque<T>* source) noexcept {
+        if (source == NULL) {
+            return out;
+        }
+
+        for (auto it = source->begin(); it != source->end(); it.operator++()) {
+            out << it.operator*() << " ";
+        }
+        out << std::endl;
+
+        return out;
+    }
+
+    void insert(iterator it, const T& source) {
+        if (it == this->end()) {
+            this->push_back(source);
+        } else {
+            T copy = it.operator*();
+            it.operator*() = source;
+
+            for (auto deque_iterator = it; deque_iterator != this->end(); deque_iterator.operator++()) {
+                T buffer = deque_iterator.operator*();
+                deque_iterator.operator*() = copy;
+                copy = buffer;
+            }
+
+            this->push_back(copy);
+        }
+    }
+
+    void erase(iterator it) {
+        for (auto deque_iterator = it; deque_iterator != this->end(); deque_iterator.operator++()) {
+            *(deque_iterator - 1) = *(deque_iterator);
+        }
+
+        this->pop_back();
+    }
 };
 
 #endif // SRC_DEQUE_HPP_
